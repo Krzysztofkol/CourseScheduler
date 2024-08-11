@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0;
+            font-size: 12px
+        }
+        .column {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .card {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 10px
+        }
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        h3 {
+            margin-top: 0;
+            color: #666;
+        }
+        .progress {
+            height: 100%;
+            border-radius: 9px;
+            transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-weight: bold;
+            z-index: 2;
+            font-size: 13px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 18px;
+            background-color: #f0f0f0;
+            border-radius: 9px;
+            margin-bottom: 1px;
+            position: relative;
+            overflow: hidden;
+        }        
+        .progress-bar .progress.empty-progress {
+            background-color: red !important;
+            width: 100% !important;
+        }
+        .progress-bar .progress.unavailable {
+            background-color: #e9ecef !important;
+            width: 100% !important;
+        }
+        .progress-bar .progress.uncompleted {
+            background-color: #e9ecef !important;
+            width: 100% !important;
+        }
+        .progress-bar .progress.completed {
+            width: 100% !important;
+            background-color: greenyellow !important;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .learnt {
+            background-color: #3498db;
+            color: white;
+        }
+        .completed-course {
+            text-decoration: line-through;
+            color: #888;
+        }        
+        .finished {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .loading {
+            text-align: center;
+            font-size: 24px;
+            margin-top: 50px;
+        }
+        .error-message {
+            color: red;
+            text-align: center;
+            font-size: 18px;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">Loading...</div>
+    <div id="app" class="container" style="display: none;"></div>
+    <div id="error-container" class="error-message"></div>
+    <script>
+        const app = document.getElementById('app');
+        const loading = document.getElementById('loading');
+        const errorContainer = document.getElementById('error-container');
+        let currentSubject = null;
+        function showLoading() {
+            loading.style.display = 'block';
+            app.style.display = 'none';
+            errorContainer.style.display = 'none';
+        }
+        function showApp() {
+            loading.style.display = 'none';
+            app.style.display = 'flex';
+            errorContainer.style.display = 'none';
+        }
+        function showError(message) {
+            loading.style.display = 'none';
+            app.style.display = 'none';
+            errorContainer.style.display = 'block';
+            errorContainer.textContent = message;
+        }
+        function generateColor(progress) {
+            if (progress <= 0) {
+                return "rgb(255,0,0)";
+            } else if (progress >= 0.9) {
+                return "rgb(0,255,0)";
+            } else {
+                const red = Math.min(255, Math.max(0, Math.floor(255 * (1 - progress) * 2)));
+                const green = Math.min(255, Math.max(0, Math.floor(255 * progress * 2)));
+                return `rgb(${red},${green},0)`;
+            }
+        }
+        function createProgressBar(progress, timeRemaining, totalTime, isSubject = false, isAvailable = true, isCompleted = false) {
+            const progressBar = document.createElement('div');
+            progressBar.className = 'progress-bar';
+            const progressElement = document.createElement('div');
+            progressElement.className = 'progress';
+            const isEmpty = timeRemaining.trim() === '0h 0min';
+            
+            if (!isSubject) {
+                if (isCompleted) {
+                    progressElement.classList.add('completed');
+                } else {
+                    if (isEmpty) {
+                        if (!isAvailable) {
+                            progressElement.classList.add('unavailable');
+                        } else {
+                            progressElement.classList.add('empty-progress');
+                        }
+                    } else {
+                        progressElement.style.width = `${progress * 100}%`;
+                        progressElement.style.backgroundColor = generateColor(progress);
+                    }
+                }
+            } else {
+                if (isEmpty) {
+                    progressElement.classList.add('empty-progress');
+                } else {
+                    progressElement.style.width = `${progress * 100}%`;
+                    progressElement.style.backgroundColor = generateColor(progress);
+                }
+            }
+            
+            const progressText = document.createElement('div');
+            progressText.className = 'progress-text';
+            progressText.textContent = `${timeRemaining} / ${totalTime}`;
+            
+            progressBar.appendChild(progressElement);
+            progressBar.appendChild(progressText);
+            
+            return progressBar;
+        }
+        function createButton(text, enabled, onClick) {
+            const button = document.createElement('button');
+            button.textContent = text;
+            button.className = text.toLowerCase();
+            button.disabled = !enabled;
+            button.addEventListener('click', onClick);
+            return button;
+        }
+        function createSubjectColumn(subject) {
+            const column = document.createElement('div');
+            column.className = 'column';
+            column.dataset.subject = subject.name;
+            const title = document.createElement('h2');
+            title.textContent = subject.name;
+            column.appendChild(title);
+            const progressBar = createProgressBar(subject.progress, subject.timeRemaining, subject.totalTime, true);
+            column.appendChild(progressBar);
+            return column;
+        }
+        function createCourseCard(course, subject) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.course = course.name;
+            card.style.opacity = course.available ? '1' : '0.5';
+            const title = document.createElement('h3');
+            title.textContent = course.name;
+            if (course.completed) {
+                title.classList.add('completed-course');
+            }
+            card.appendChild(title);
+            const progressBar = createProgressBar(course.progress, course.timeRemaining, course.totalTime, false, course.available, course.completed);
+            card.appendChild(progressBar);
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'button-container';
+            const learntButton = createButton('Learnt', course.available, () => updateCourse(subject, course.name, 'learnt'));
+            const finishedButton = createButton('Finished', course.available, () => updateCourse(subject, course.name, 'finished'));
+            buttonContainer.appendChild(learntButton);
+            buttonContainer.appendChild(finishedButton);
+            card.appendChild(buttonContainer);
+            return card;
+        }
+        function loadSubjects() {
+            showLoading();
+            fetch('/subjects')
+                .then(response => response.json())
+                .then(subjects => {
+                    app.innerHTML = '';
+                    subjects.forEach(subject => {
+                        const column = createSubjectColumn(subject);
+                        app.appendChild(column);
+                    });
+                    showApp();
+                    subjects.forEach(subject => loadCourses(subject.name));
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError('Failed to load subjects. Please try again later.');
+                });
+        }
+        function loadCourses(subject) {
+            fetch(`/courses/${subject}`)
+                .then(response => response.json())
+                .then(courses => {
+                    const column = document.querySelector(`.column[data-subject="${subject}"]`);
+                    if (column) {
+                        const existingCards = column.querySelectorAll('.card');
+                        existingCards.forEach(card => card.remove());
+                        courses.forEach(course => {
+                            const card = createCourseCard(course, subject);
+                            column.appendChild(card);
+                        });
+                    } else {
+                        console.error(`Column for subject ${subject} not found`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError(`Failed to load courses for ${subject}. Please try again later.`);
+                });
+        }
+        function updateCourse(subject, course, action) {
+            const courseCard = document.querySelector(`[data-subject="${subject}"] [data-course="${course}"]`);
+            const subjectColumn = document.querySelector(`[data-subject="${subject}"]`);
+            const subjectProgressBar = subjectColumn.querySelector('.progress-bar');
+            const subjectProgressElement = subjectProgressBar.querySelector('.progress');
+            const subjectProgressText = subjectProgressBar.querySelector('.progress-text');
+            // Store original progress for potential revert
+            const originalCourseProgress = courseCard.querySelector('.progress-bar .progress').style.width;
+            const originalSubjectProgress = subjectProgressElement.style.width;
+            // Optimistically update UI
+            if (action === 'finished') {
+                courseCard.querySelector('h3').classList.add('completed-course');
+            }
+            fetch('/update_course', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    subject: subject,
+                    course: course,
+                    action: action
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update course card
+                    const courseProgressBar = courseCard.querySelector('.progress-bar');
+                    const courseProgressElement = courseProgressBar.querySelector('.progress');
+                    const courseProgressText = courseProgressBar.querySelector('.progress-text');
+                    courseProgressElement.style.width = `${data.course_progress * 100}%`;
+                    courseProgressElement.style.backgroundColor = generateColor(data.course_progress);
+                    courseProgressText.textContent = `${data.course_time_remaining} / ${data.course_total_time}`;
+                    // Update subject progress
+                    subjectProgressElement.style.width = `${data.subject_progress * 100}%`;
+                    subjectProgressElement.style.backgroundColor = generateColor(data.subject_progress);
+                    subjectProgressText.textContent = `${data.subject_time_remaining} / ${data.subject_total_time}`;
+                    if (data.course_completed) {
+                        courseCard.querySelector('h3').classList.add('completed-course');
+                    }
+                    // Re-sort courses and subjects
+                    loadCourses(subject);
+                    loadSubjects();
+                } else {
+                    // Revert to original progress
+                    courseCard.querySelector('.progress-bar .progress').style.width = originalCourseProgress;
+                    subjectProgressElement.style.width = originalSubjectProgress;
+                    if (action === 'finished') {
+                        courseCard.querySelector('h3').classList.remove('completed-course');
+                    }
+                    showError('Failed to update course. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert to original progress
+                courseCard.querySelector('.progress-bar .progress').style.width = originalCourseProgress;
+                subjectProgressElement.style.width = originalSubjectProgress;
+                if (action === 'finished') {
+                    courseCard.querySelector('h3').classList.remove('completed-course');
+                }
+                showError('Failed to update course. Please try again later.');
+            });
+        }
+        loadSubjects();
+    </script>
+</body>
+</html>
