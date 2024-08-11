@@ -1,7 +1,7 @@
 # CourseScheduler
 Simple web app to find what one should learn next
 
-# CourseScheduler App Overview:
+## CourseScheduler App Overview:
 The CourseScheduler is a learning management tool that helps users track their progress in various subjects and courses and decide on what to focus on next. The app has a visual interface that organizes learning content into columns and cards. Key Features:
 1. Subject Tracking: The app shows different subjects as separate columns.
 2. Course Management: Each subject contains multiple courses, displayed as cards.
@@ -11,7 +11,8 @@ The CourseScheduler is a learning management tool that helps users track their p
 6. Time Management: The app will show time remaining for each subject and course, showing courses and subjects that should be done next.
 7. Completed Course Indication: Courses that have been completed are displayed with a strikethrough style, making it easy to identify finished content at a glance.
 The app's design allows users to quickly see their overall progress in different subjects and individual courses, helping them prioritize their learning efforts and track their educational journey effectively.
-# Folder structure:
+
+## Folder structure:
 ```
 CourseScheduler/
 ├── subjects/
@@ -28,7 +29,8 @@ CourseScheduler/
 ├── frontend.html
 └── start-app-script.bat
 ```
-# UI Description for `CourseScheduler` App:
+
+## UI Description for `CourseScheduler` App:
 1. Layout:
 - The UI consists of multiple columns side by side.
 - Each column represents a different subject.
