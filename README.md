@@ -1,6 +1,8 @@
 # CourseScheduler
 Simple web app to find what one should learn next
 
+![Example screenshot of UI](CourseSchedulerUI.png "Example screenshot of UI")
+
 ## CourseScheduler App Overview:
 The CourseScheduler is a learning management tool that helps users track their progress in various subjects and courses and decide on what to focus on next. The app has a visual interface that organizes learning content into columns and cards. Key Features:
 1. Subject Tracking: The app shows different subjects as separate columns.
